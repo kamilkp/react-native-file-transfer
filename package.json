@@ -1,0 +1,18 @@
+{
+  "name": "react-native-file-transfer",
+  "version": "0.0.1",
+  "description": "react-native plugin for uploading files with multipart/form-data requests",
+  "homepage": "https://github.com/kamilkp/react-native-file-transfer",
+  "author": {
+    "name": "Kamil Pekala",
+    "email": "kamilkp@gmail.com",
+    "url": "http://github.com/kamilkp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kamilkp/react-native-file-transfer.git"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "dependencies": {}
+}

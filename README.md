@@ -1,4 +1,4 @@
-# react-native-file-transfer
+# react-native-file-transfer [![npm version](https://badge.fury.io/js/react-native-file-transfer.svg)](http://badge.fury.io/js/react-native-file-transfer)
 This little plugin lets you easily upload files from your photo library to a web server using a standard `multipart/form-data` POST request. It **does not** incorporate the tranfer of photo library images data from Objective-C to JavaScript (which is slow). The request are being made directly from Objective-C.
 # installation
 `npm install react-native-file-transfer`

@@ -2,7 +2,7 @@
 //  RCTFileTransfer.m
 //  react-native-file-transfer
 //
-//  Created by Kamil Pękala on 23.04.2015
+//  Created by Kamil Pękala on 30.04.2015
 //  Copyright (c) 2015 Kamil Pękala. All rights reserved.
 //
 
@@ -12,7 +12,7 @@
 @interface FileTransfer : NSObject <RCTBridgeModule>
 - (NSMutableURLRequest *)getMultiPartRequest:(NSData *)fileData serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
-- (void)uploadBase64:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
+- (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 @end
 
 @implementation FileTransfer
@@ -26,7 +26,10 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
     [self uploadAssetsLibrary:input callback:callback];
   }
   else if([url hasPrefix:@"data:"]){
-    [self uploadBase64:input callback:callback];
+    [self uploadUri:input callback:callback];
+  }
+  else if([url hasPrefix:@"file:"]){
+    [self uploadUri:input callback:callback];
   }
   else{
     NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:0],@"status",@"Unknown protocol",@"data",nil];
@@ -48,10 +51,15 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   [library assetForURL:url resultBlock:^(ALAsset *asset) {
 
     ALAssetRepresentation *rep = [asset defaultRepresentation];
-    Byte *buffer = (Byte*)malloc(rep.size);
-    NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
 
-    NSData *fileData = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
+    CGImageRef fullScreenImageRef = [rep fullScreenImage];
+    UIImage *image = [UIImage imageWithCGImage:fullScreenImageRef];
+    NSData *fileData = UIImagePNGRepresentation(image);
+
+//    Byte *buffer = (Byte*)malloc(rep.size);
+//    NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
+//
+//    NSData *fileData = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
     NSDictionary* requestData = [input objectForKey:@"data"];
     NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
 
@@ -69,7 +77,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   }];
 }
 
-- (void)uploadBase64:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+- (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
   NSString *fileName = input[@"fileName"];
   NSString *mimeType = input[@"mimeType"];

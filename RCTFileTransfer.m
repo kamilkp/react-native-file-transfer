@@ -29,7 +29,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
     [self uploadUri:input callback:callback];
   }
   else if([url hasPrefix:@"file:"]){
-    [self uploadUri:input callback:callback];
+    [self uploadFile:input callback:callback];
   }
   else{
     NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:0],@"status",@"Unknown protocol",@"data",nil];
@@ -75,6 +75,27 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   } failureBlock:^(NSError *error) {
     NSLog(@"Getting file from library failed: %@", error);
   }];
+}
+
+- (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
+  NSString *fileName = input[@"fileName"];
+  NSString *mimeType = input[@"mimeType"];
+  NSString *uploadUrl = input[@"uploadUrl"];
+
+  NSData *fileData = [NSData dataWithContentsOfFile:input];
+
+  NSDictionary* requestData = [input objectForKey:@"data"];
+  NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
+
+  NSHTTPURLResponse *response = nil;
+  NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
+  NSInteger statusCode = [response statusCode];
+  NSString *returnString = [[NSString alloc] initWithData:returnData encoding:NSUTF8StringEncoding];
+
+  NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:statusCode],@"status",returnString,@"data",nil];
+
+  callback(@[res]);
 }
 
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback

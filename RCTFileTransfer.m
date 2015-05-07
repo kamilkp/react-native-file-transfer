@@ -55,13 +55,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
 {
 
   NSURL *url = [[NSURL alloc] initWithString:input[@"file"]];
-  NSString *fileName = input[@"fileName"];
-  NSString *mimeType = input[@"mimeType"];
-  NSString *uploadUrl = input[@"uploadUrl"];
-
   ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-
-  // Using the ALAssetsLibrary instance and our NSURL object open the image.
   [library assetForURL:url resultBlock:^(ALAsset *asset) {
 
     ALAssetRepresentation *rep = [asset defaultRepresentation];
@@ -94,7 +88,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
 
 - (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
-  NSURL *filePath = [[NSURL alloc] initWithString:input[@"file"]];
+  NSString *filePath = input[@"file"];
   NSData *fileData = [NSData dataWithContentsOfFile:filePath];
 
   [self sendData:fileData withOptions:input callback:callback];

@@ -13,6 +13,8 @@
 - (NSMutableURLRequest *)getMultiPartRequest:(NSData *)fileData serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
+- (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
+- (void)sendFileData:(NSData *)fileData withOptions:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 @end
 
 @implementation FileTransfer
@@ -29,6 +31,9 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
     [self uploadUri:input callback:callback];
   }
   else if([url hasPrefix:@"file:"]){
+    [self uploadUri:input callback:callback];
+  }
+  else if ([url isAbsolutePath]) {
     [self uploadFile:input callback:callback];
   }
   else{
@@ -79,34 +84,26 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
 
 - (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
-  NSString *fileName = input[@"fileName"];
-  NSString *mimeType = input[@"mimeType"];
-  NSString *uploadUrl = input[@"uploadUrl"];
+  NSURL *filePath = [[NSURL alloc] initWithString:input[@"path"]];
+  NSData *fileData = [NSData dataWithContentsOfFile:filePath];
 
-  NSData *fileData = [NSData dataWithContentsOfFile:input];
-
-  NSDictionary* requestData = [input objectForKey:@"data"];
-  NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
-
-  NSHTTPURLResponse *response = nil;
-  NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
-  NSInteger statusCode = [response statusCode];
-  NSString *returnString = [[NSString alloc] initWithData:returnData encoding:NSUTF8StringEncoding];
-
-  NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:statusCode],@"status",returnString,@"data",nil];
-
-  callback(@[res]);
+  [self sendFileData:fileData withOptions:input callback:callback];
 }
 
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
+  NSString *dataUrlString = input[@"path"];
+  NSURL *dataUrl = [[NSURL alloc] initWithString:dataUrlString];
+  NSData *fileData = [NSData dataWithContentsOfURL: dataUrl];
+
+  [self sendFileData:fileData withOptions:input callback:callback];
+}
+
+- (void)sendFileData:(NSData *)fileData withOptions:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
   NSString *fileName = input[@"fileName"];
   NSString *mimeType = input[@"mimeType"];
   NSString *uploadUrl = input[@"uploadUrl"];
-  NSString *dataUrlString = input[@"path"];
-  NSURL *dataUrl = [[NSURL alloc] initWithString:dataUrlString];
-
-  NSData *fileData = [NSData dataWithContentsOfURL: dataUrl];
 
   NSDictionary* requestData = [input objectForKey:@"data"];
   NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
@@ -171,4 +168,3 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
 }
 
 @end
-

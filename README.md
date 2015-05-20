@@ -18,7 +18,7 @@ var obj = {
         // along with the uploaded file
     }
 };
-NativeModules.FileTransfer.upload(obj, res => {
+NativeModules.FileTransfer.upload(obj, (err, res) => {
     // handle response
     // it is an object with 'status' and 'data' properties
     // if the file path protocol is not supported the status will be 0

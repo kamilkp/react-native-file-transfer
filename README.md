@@ -9,7 +9,7 @@ When you properly add the `RCTFileTransfer.m` file to your xcode project you may
 ```javascript
 var { NativeModules } = require('react-native');
 var obj = {
-    path, // either an 'assets-library' url (for files from photo library) or an image dataURL
+    uri, // either an 'assets-library' url (for files from photo library) or an image dataURL
     uploadUrl,
     fileName,
     mimeType,

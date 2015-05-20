@@ -7,12 +7,16 @@
 //
 
 #import "RCTBridgeModule.h"
+#import "RCTUtils.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <UIKit/UIKit.h>
+
 @interface FileTransfer : NSObject <RCTBridgeModule>
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)fileData serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
+- (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
+- (void)sendData:(NSData *)data withOptions:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 @end
 
 @implementation FileTransfer
@@ -21,34 +25,30 @@ RCT_EXPORT_MODULE();
 
 RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback)
 {
-  NSString *url = input[@"path"];
-  if([url hasPrefix:@"assets-library"]){
+  NSString *uri = input[@"uri"];
+  if([uri hasPrefix:@"assets-library"]){
     [self uploadAssetsLibrary:input callback:callback];
   }
-  else if([url hasPrefix:@"data:"]){
+  else if([uri hasPrefix:@"data:"]){
     [self uploadUri:input callback:callback];
   }
-  else if([url hasPrefix:@"file:"]){
+  else if([uri hasPrefix:@"file:"]){
     [self uploadUri:input callback:callback];
+  }
+  else if ([uri isAbsolutePath]) {
+    [self uploadFile:input callback:callback];
   }
   else{
-    NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:0],@"status",@"Unknown protocol",@"data",nil];
-    callback(@[res]);
+    callback(@[RCTMakeError(@"Unknown protocol for key: 'file'", nil, nil)]);
   }
 }
 
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
 
-  NSURL *url = [[NSURL alloc] initWithString:input[@"path"]];
-  NSString *fileName = input[@"fileName"];
-  NSString *mimeType = input[@"mimeType"];
-  NSString *uploadUrl = input[@"uploadUrl"];
-
+  NSURL *assetUrl = [[NSURL alloc] initWithString:input[@"uri"]];
   ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-
-  // Using the ALAssetsLibrary instance and our NSURL object open the image.
-  [library assetForURL:url resultBlock:^(ALAsset *asset) {
+  [library assetForURL:assetUrl resultBlock:^(ALAsset *asset) {
 
     ALAssetRepresentation *rep = [asset defaultRepresentation];
 
@@ -56,39 +56,53 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
     UIImage *image = [UIImage imageWithCGImage:fullScreenImageRef];
     NSData *fileData = UIImagePNGRepresentation(image);
 
-//    Byte *buffer = (Byte*)malloc(rep.size);
-//    NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
-//
-//    NSData *fileData = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
-    NSDictionary* requestData = [input objectForKey:@"data"];
-    NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
+    [self sendData:fileData withOptions:input callback:callback];
 
-    NSHTTPURLResponse *response = nil;
-    NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
-    NSInteger statusCode = [response statusCode];
-    NSString *returnString = [[NSString alloc] initWithData:returnData encoding:NSUTF8StringEncoding];
-
-    NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:statusCode],@"status",returnString,@"data",nil];
-
-    callback(@[res]);
-
+    //    Byte *buffer = (Byte*)malloc(rep.size);
+    //    NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
+    //
+    //    NSData *fileData = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
+    // NSDictionary* requestData = [input objectForKey:@"data"];
+    // NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
+    //
+    // NSHTTPURLResponse *response = nil;
+    // NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
+    // NSInteger statusCode = [response statusCode];
+    // NSString *returnString = [[NSString alloc] initWithData:returnData encoding:NSUTF8StringEncoding];
+    //
+    // NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:statusCode],@"status",returnString,@"data",nil];
+    //
+    // callback(@[res]);
   } failureBlock:^(NSError *error) {
-    NSLog(@"Getting file from library failed: %@", error);
+    callback(@[RCTMakeError(@"Error loading library asset", nil, nil)]);
   }];
+}
+
+- (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
+  NSString *filePath = input[@"uri"];
+  NSData *fileData = [NSData dataWithContentsOfFile:filePath];
+
+  [self sendData:fileData withOptions:input callback:callback];
 }
 
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
+  NSString *dataUrlString = input[@"uri"];
+  NSURL *dataUrl = [[NSURL alloc] initWithString:dataUrlString];
+  NSData *fileData = [NSData dataWithContentsOfURL: dataUrl];
+
+  [self sendData:fileData withOptions:input callback:callback];
+}
+
+- (void)sendData:(NSData *)data withOptions:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
   NSString *fileName = input[@"fileName"];
   NSString *mimeType = input[@"mimeType"];
   NSString *uploadUrl = input[@"uploadUrl"];
-  NSString *dataUrlString = input[@"path"];
-  NSURL *dataUrl = [[NSURL alloc] initWithString:dataUrlString];
-
-  NSData *fileData = [NSData dataWithContentsOfURL: dataUrl];
 
   NSDictionary* requestData = [input objectForKey:@"data"];
-  NSMutableURLRequest* req = [self getMultiPartRequest:fileData serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
+  NSMutableURLRequest* req = [self getMultiPartRequest:data serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
 
   NSHTTPURLResponse *response = nil;
   NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
@@ -97,10 +111,10 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
 
   NSDictionary *res=[[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithInteger:statusCode],@"status",returnString,@"data",nil];
 
-  callback(@[res]);
+  callback(@[[NSNull null], res]);
 }
 
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)fileData serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName
 {
   NSString* fileKey = @"file";
   NSURL* url = [NSURL URLWithString:server];
@@ -136,18 +150,17 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   if (mimeType != nil) {
     [requestBody appendData:[[NSString stringWithFormat:@"Content-Type: %@\r\n", mimeType] dataUsingEncoding:NSUTF8StringEncoding]];
   }
-  [requestBody appendData:[[NSString stringWithFormat:@"Content-Length: %ld\r\n\r\n", (long)[fileData length]] dataUsingEncoding:NSUTF8StringEncoding]];
+  [requestBody appendData:[[NSString stringWithFormat:@"Content-Length: %ld\r\n\r\n", (long)[data length]] dataUsingEncoding:NSUTF8StringEncoding]];
 
   NSData* afterFile = [[NSString stringWithFormat:@"\r\n--%@--\r\n", formBoundaryString] dataUsingEncoding:NSUTF8StringEncoding];
 
-  long long totalPayloadLength = [requestBody length] + [fileData length] + [afterFile length];
+  long long totalPayloadLength = [requestBody length] + [data length] + [afterFile length];
   [req setValue:[[NSNumber numberWithLongLong:totalPayloadLength] stringValue] forHTTPHeaderField:@"Content-Length"];
 
-  [requestBody appendData:fileData];
+  [requestBody appendData:data];
   [requestBody appendData:afterFile];
   [req setHTTPBody:requestBody];
   return req;
 }
 
 @end
-

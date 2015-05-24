@@ -12,7 +12,7 @@
 #import <UIKit/UIKit.h>
 
 @interface FileTransfer : NSObject <RCTBridgeModule>
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
@@ -102,7 +102,8 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   NSString *uploadUrl = input[@"uploadUrl"];
 
   NSDictionary* requestData = [input objectForKey:@"data"];
-  NSMutableURLRequest* req = [self getMultiPartRequest:data serverUrl:uploadUrl requestData:requestData mimeType:mimeType fileName:fileName];
+  NSDictionary* requestHeaders = [input objectForKey:@"headers"];
+  NSMutableURLRequest* req = [self getMultiPartRequest:data serverUrl:uploadUrl requestData:requestData requestHeaders:requestHeaders mimeType:mimeType fileName:fileName];
 
   NSHTTPURLResponse *response = nil;
   NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
@@ -114,7 +115,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   callback(@[[NSNull null], res]);
 }
 
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData mimeType:(NSString *)mimeType fileName:(NSString *)fileName
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName
 {
   NSString* fileKey = @"file";
   NSURL* url = [NSURL URLWithString:server];
@@ -130,13 +131,30 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   NSData* formBoundaryData = [[NSString stringWithFormat:@"--%@\r\n", formBoundaryString] dataUsingEncoding:NSUTF8StringEncoding];
   NSMutableData* requestBody = [NSMutableData data];
 
-  for (NSString* key in requestData) {
-    id val = [requestData objectForKey:key];
+  for (NSString* key in requestHeaders) {
+    id val = [requestHeaders objectForKey:key];
     if ([val respondsToSelector:@selector(stringValue)]) {
       val = [val stringValue];
     }
     if (![val isKindOfClass:[NSString class]]) {
       continue;
+    }
+
+    [req setValue:val forHTTPHeaderField:key];
+  }
+
+  for (NSString* key in requestData) {
+    id val = [requestData objectForKey:key];
+    if ([val respondsToSelector:@selector(stringValue)]) {
+      val = [val stringValue];
+    }
+
+    if (![val isKindOfClass:[NSString class]]) {
+      NSError *error;
+      NSData *jsonData = [NSJSONSerialization dataWithJSONObject:val
+                                              options:(NSJSONWritingOptions)0
+                                              error:&error];
+      val = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     }
 
     [requestBody appendData:formBoundaryData];

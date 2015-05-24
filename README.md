@@ -13,6 +13,7 @@ var obj = {
     uploadUrl,
     fileName,
     mimeType,
+    headers,
     data: {
         // whatever properties you wish to send in the request
         // along with the uploaded file

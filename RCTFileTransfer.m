@@ -53,6 +53,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
     ALAssetRepresentation *rep = [asset defaultRepresentation];
     UIImage *image;
     NSString *size = input[@"size"];
+    NSString *format = input[@"format"];
 
     if ([size isEqualToString:@"full"]) {
       CGImageRef imageRef = [rep fullResolutionImage];
@@ -62,7 +63,12 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
       image = [UIImage imageWithCGImage:fullScreenImageRef];
     }
 
-    NSData *fileData = UIImageJPEGRepresentation(image, 1);
+    NSData *fileData;
+    if ([format isEqualToString:@"JPEG"]) {
+      fileData = UIImageJPEGRepresentation(image, 1);
+    } else {
+      fileData = UIImagePNGRepresentation(image);
+    }
 
     [self sendData:fileData withOptions:input callback:callback];
 

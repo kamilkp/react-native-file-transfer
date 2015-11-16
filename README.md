@@ -11,6 +11,7 @@ var { NativeModules } = require('react-native');
 var obj = {
     uri, // either an 'assets-library' url (for files from photo library) or an image dataURL
     size, // either 'screen' (default) or 'full', only applies to asset library uploads
+    format, // either 'PNG' (default) or 'JPEG', only applies to asset library uploads
     uploadUrl,
     fileName,
     mimeType,

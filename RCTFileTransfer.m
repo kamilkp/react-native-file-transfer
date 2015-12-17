@@ -12,7 +12,7 @@
 #import <UIKit/UIKit.h>
 
 @interface FileTransfer : NSObject <RCTBridgeModule>
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName;
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName fileKey:(NSString *)fileKey;
 - (void)uploadAssetsLibrary:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadUri:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)uploadFile:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
@@ -100,10 +100,13 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   NSString *fileName = input[@"fileName"];
   NSString *mimeType = input[@"mimeType"];
   NSString *uploadUrl = input[@"uploadUrl"];
+  NSString *fileKey = input[@"fileKey"];
+    
+  if (!fileKey) fileKey = @"file";
 
   NSDictionary* requestData = [input objectForKey:@"data"];
   NSDictionary* requestHeaders = [input objectForKey:@"headers"];
-  NSMutableURLRequest* req = [self getMultiPartRequest:data serverUrl:uploadUrl requestData:requestData requestHeaders:requestHeaders mimeType:mimeType fileName:fileName];
+  NSMutableURLRequest* req = [self getMultiPartRequest:data serverUrl:uploadUrl requestData:requestData requestHeaders:requestHeaders mimeType:mimeType fileName:fileName fileKey:fileKey];
 
   NSHTTPURLResponse *response = nil;
   NSData *returnData = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:nil];
@@ -115,9 +118,8 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   callback(@[[NSNull null], res]);
 }
 
-- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName
+- (NSMutableURLRequest *)getMultiPartRequest:(NSData *)data serverUrl:(NSString *)server requestData:(NSDictionary *)requestData requestHeaders:(NSDictionary *)requestHeaders mimeType:(NSString *)mimeType fileName:(NSString *)fileName fileKey:(NSString *)fileKey
 {
-  NSString* fileKey = @"file";
   NSURL* url = [NSURL URLWithString:server];
   NSMutableURLRequest* req = [NSMutableURLRequest requestWithURL:url];
 

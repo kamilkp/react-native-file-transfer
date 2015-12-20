@@ -10,6 +10,8 @@ When you properly add the `RCTFileTransfer.m` file to your xcode project you may
 var { NativeModules } = require('react-native');
 var obj = {
     uri, // either an 'assets-library' url (for files from photo library) or an image dataURL
+    size, // either 'screen' (default) or 'full', only applies to asset library uploads
+    format, // either 'PNG' (default) or 'JPEG', only applies to asset library uploads
     uploadUrl,
     fileName,
     fileKey, // (default="file") the name of the field in the POST form data under which to store the file

@@ -51,10 +51,24 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   [library assetForURL:assetUrl resultBlock:^(ALAsset *asset) {
 
     ALAssetRepresentation *rep = [asset defaultRepresentation];
+    UIImage *image;
+    NSString *size = input[@"size"];
+    NSString *format = input[@"format"];
 
-    CGImageRef fullScreenImageRef = [rep fullScreenImage];
-    UIImage *image = [UIImage imageWithCGImage:fullScreenImageRef];
-    NSData *fileData = UIImagePNGRepresentation(image);
+    if ([size isEqualToString:@"full"]) {
+      CGImageRef imageRef = [rep fullResolutionImage];
+      image = [UIImage imageWithCGImage:imageRef scale:[rep scale] orientation:(UIImageOrientation)[rep orientation]];
+    } else {
+      CGImageRef fullScreenImageRef = [rep fullScreenImage];
+      image = [UIImage imageWithCGImage:fullScreenImageRef];
+    }
+
+    NSData *fileData;
+    if ([format isEqualToString:@"JPEG"]) {
+      fileData = UIImageJPEGRepresentation(image, 1);
+    } else {
+      fileData = UIImagePNGRepresentation(image);
+    }
 
     [self sendData:fileData withOptions:input callback:callback];
 

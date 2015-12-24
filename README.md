@@ -2,7 +2,7 @@
 This little plugin lets you easily upload files from your photo library to a web server using a standard `multipart/form-data` POST request. It **does not** incorporate the tranfer of photo library images data from Objective-C to JavaScript (which is slow). The request are being made directly from Objective-C.
 # installation
 1. `npm install react-native-file-transfer`;
-2. In xcode: Add `RTCFileTransfer.m` in `Your Project > Libraries > React > Base`.
+2. In xcode: Add `RCTFileTransfer.m` in `Your Project > Libraries > React > Base`.
 
 # how to use it
 When you properly add the `RCTFileTransfer.m` file to your xcode project you may now use it in the js files. Example usage:

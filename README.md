@@ -11,6 +11,7 @@ var { NativeModules } = require('react-native');
 var obj = {
     uri, // either an 'assets-library' url (for files from photo library) or an image dataURL
     uploadUrl,
+    HTTPMethod, // (default="POST") type of HTTP request to use when sending (either "POST" or "PUT")
     fileName,
     fileKey, // (default="file") the name of the field in the POST form data under which to store the file
     mimeType,

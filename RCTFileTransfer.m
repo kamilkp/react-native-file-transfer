@@ -6,8 +6,8 @@
 //  Copyright (c) 2015 Kamil Pękala. All rights reserved.
 //
 
-#import "RCTBridgeModule.h"
-#import "RCTUtils.h"
+#import <React/RCTBridgeModule.h>
+#import <React/RCTUtils.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <UIKit/UIKit.h>
 

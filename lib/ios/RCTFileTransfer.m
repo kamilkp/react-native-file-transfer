@@ -6,8 +6,8 @@
 //  Copyright (c) 2015 Kamil Pękala. All rights reserved.
 //
 
-#import "RCTBridgeModule.h"
-#import "RCTUtils.h"
+#import <React/RCTBridgeModule.h>
+#import <React/RCTUtils.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <UIKit/UIKit.h>
 
@@ -101,7 +101,6 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   NSString *mimeType = input[@"mimeType"];
   NSString *uploadUrl = input[@"uploadUrl"];
   NSString *fileKey = input[@"fileKey"];
-    
   if (!fileKey) fileKey = @"file";
 
   NSDictionary* requestData = [input objectForKey:@"data"];

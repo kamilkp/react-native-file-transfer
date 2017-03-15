@@ -101,7 +101,6 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)input callback:(RCTResponseSenderBlock)
   NSString *mimeType = input[@"mimeType"];
   NSString *uploadUrl = input[@"uploadUrl"];
   NSString *fileKey = input[@"fileKey"];
-
   if (!fileKey) fileKey = @"file";
 
   NSDictionary* requestData = [input objectForKey:@"data"];
